@@ -93,12 +93,12 @@ BEGIN {
 	}
 
 	if (COLOR)
-		printf "%s", YELLOW > "/dev/stderr"
+		printf "%s", YELLOW
 	if (VERBOSE) {
-		printf "---------------- last ----------- min ----------- avg ----------- max ------------------------------------------------\n" > "/dev/stderr"
-		printf "%6d %15s %15s %15s %15s\n", sum_min, p(sum_last), p(sum_min), p(sum_avg), p(sum_max) > "/dev/stderr"
+		printf "---------------- last ----------- min ----------- avg ----------- max ------------------------------------------------\n"
+		printf "%6d %15s %15s %15s %15s\n", sum_min, p(sum_last), p(sum_min), p(sum_avg), p(sum_max)
 	} else {
-		printf "----------------- min ------------------------------------------------\n" > "/dev/stderr"
-		printf "%6d %15s\n", sum_min, p(sum_min) > "/dev/stderr"
+		printf "----------------- min ------------------------------------------------\n"
+		printf "%6d %15s\n", sum_min, p(sum_min)
 	}
 }
