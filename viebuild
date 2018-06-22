@@ -1,0 +1,55 @@
+#!/bin/bash
+# Opens the ebuild file for the given package, with the
+# installed version or the available stable version
+
+source /etc/portage/make.conf
+
+EDITOR=${EDITOR:-vi}
+PORTDIR=${PORTDIR:-/usr/portage}
+
+PKG=$(eix --exact --only-names $1)
+
+if [[ $? != 0 ]]; then
+	echo "No match found."
+	exit 1
+fi
+
+PKG_ARRAY=( $PKG )
+COUNT=${#PKG_ARRAY[@]}
+
+if [[ $COUNT > 1 ]]; then
+	echo "More than 1 match found:"
+	for (( i=0; i<COUNT; i++ )); do
+		echo " $i - ${PKG_ARRAY[$i]}"
+	done
+	read -p "Which do you want? " n
+	PKG=${PKG_ARRAY[$n]}
+	[[ ! $n || ! $PKG ]] && exit 1
+fi
+
+PKGVER=$(eix --format '<installedversions:NAMEVERSION>' --exact --pure-packages $PKG)
+
+if [[ $? != 0 ]]; then # Not installed package
+	PKGVER=$(eix --format '<bestversion:NAMEVERSION>' --exact --pure-packages $PKG)
+fi
+
+FILENAME=${PKG}/${PKGVER#*/}.ebuild
+FILEPATH="${PORTDIR}/${FILENAME}"
+
+if [ ! -f "$FILEPATH" ]; then
+
+	PORTDIR="$(eix --format '<installedversions:NAMEVERSION>' --exact $PKG | awk '/^\[/{print $NF}')"
+	FILEPATH="${PORTDIR}/${FILENAME}"
+
+	if [ ! -f "$FILEPATH" ]; then
+		echo "File '$FILEPATH' does not exists. Something went wrong..."
+		exit 1
+	fi
+fi
+
+if [ -t 1 ]; then
+	$EDITOR $FILEPATH
+else
+	echo "$FILEPATH"
+fi
+
