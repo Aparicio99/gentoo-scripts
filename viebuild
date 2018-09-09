@@ -7,7 +7,23 @@ source /etc/portage/make.conf
 EDITOR=${EDITOR:-vi}
 PORTDIR=${PORTDIR:-/usr/portage}
 
-PKG=$(eix --exact --only-names $1)
+function installed_version() {
+	eix --format '<installedversions:NAMEVERSION>' --exact --pure-packages "$1"
+}
+
+function best_version() {
+	eix --format '<bestversion:NAMEVERSION>' --exact --pure-packages "$1"
+}
+
+function overlay_location() {
+	eix --format '<installedversions:NAMEVERSION>' --exact "$1" | awk '/^\[/{print $NF}'
+}
+
+function pkg_matches() {
+	eix --exact --only-names "$1"
+}
+
+PKG=$(pkg_matches $1)
 
 if [[ $? != 0 ]]; then
 	echo "No match found."
@@ -27,10 +43,10 @@ if [[ $COUNT > 1 ]]; then
 	[[ ! $n || ! $PKG ]] && exit 1
 fi
 
-PKGVER=$(eix --format '<installedversions:NAMEVERSION>' --exact --pure-packages $PKG)
+PKGVER=$(installed_version $PKG)
 
 if [[ $? != 0 ]]; then # Not installed package
-	PKGVER=$(eix --format '<bestversion:NAMEVERSION>' --exact --pure-packages $PKG)
+	PKGVER=$(best_version $PKG)
 fi
 
 FILENAME=${PKG}/${PKGVER#*/}.ebuild
@@ -38,18 +54,29 @@ FILEPATH="${PORTDIR}/${FILENAME}"
 
 if [ ! -f "$FILEPATH" ]; then
 
-	PORTDIR="$(eix --format '<installedversions:NAMEVERSION>' --exact $PKG | awk '/^\[/{print $NF}')"
+	# Try to find it in a overlay
+	PORTDIR="$(overlay_location "$PKG")"
 	FILEPATH="${PORTDIR}/${FILENAME}"
 
 	if [ ! -f "$FILEPATH" ]; then
-		echo "File '$FILEPATH' does not exists. Something went wrong..."
-		exit 1
+
+		# It could be a installed version that is gone from the repo
+		# So instead show the last version available
+		PKGVER=$(best_version $PKG)
+		FILENAME=${PKG}/${PKGVER#*/}.ebuild
+		FILEPATH="${PORTDIR}/${FILENAME}"
+
+		if [ ! -f "$FILEPATH" ]; then
+			echo "File '$FILEPATH' does not exists. Something went wrong..."
+			exit 1
+		fi
 	fi
 fi
 
+# Is the output to the terminal?
 if [ -t 1 ]; then
 	$EDITOR $FILEPATH
-else
+else # Or probably a pipe
 	echo "$FILEPATH"
 fi
 
