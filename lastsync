@@ -1,5 +1,8 @@
 #!/bin/sh
-SYNC=$(qlop -sC | awk 'END{gsub(/>>>.*/,""); print}' | xargs -i date -d "{}" '+%s')
+
+export LC_TIME=en_US.utf8
+
+SYNC=$(qlop -sC | awk 'END{gsub(/>>>.*/,""); print $1}' | xargs -i date -d "{}" '+%s')
 
 if [ "$1" -a "$1" = "days" ];
 then
