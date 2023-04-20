@@ -14,7 +14,7 @@ DESTINATION="$1"
 add_executable() {
 	local EXE="$1"
 
-	if [[ "$(ldd $EXE)" == *"not a dynamic executable"* ]]; then
+	if [[ "$(ldd $EXE 2>&1)" =~ "not a dynamic executable" ]]; then
 		echo "Adding $EXE."
 	else
 		echo "Upsie, $EXE not statically linked..."
@@ -98,12 +98,16 @@ mdadm --assemble --scan
 
 ROOTFS="\$(cmdline root)"
 
+msg "ROOTFS='\$ROOTFS'"
+
 if [ -z \${ROOTFS} ] ; then
 	error "You forgot to pass the root device in the kernel cmdline :("
 	rescue_shell
 fi
 
 DEVICE="\$(findfs \${ROOTFS})"
+
+msg "DEVICE='\$DEVICE'"
 
 if [ -z \${DEVICE} ] ; then
 	error "Cannot find the device for \${ROOTFS} :("
